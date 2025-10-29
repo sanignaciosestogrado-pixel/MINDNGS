@@ -1,0 +1,337 @@
+<!--
+  Proyecto: Plataforma escolar tipo Brainly
+  Para: Concurso "Crea y Emprende" - I.E. SantÃ­simo JesÃºs, Ica, PerÃº
+  Archivo: index.html (Single-file static prototype)
+
+  Instrucciones:
+  - Este archivo es una maqueta funcional para usar como base.
+  - Guarda como index.html y haz doble clic para abrir en el navegador.
+  - Para publicar gratis: usar GitHub Pages o Netlify (ver instrucciones en el chat).
+  - Nota sobre funcionalidades reales: para que muchos estudiantes suban videos y preguntas
+    en tiempo real se necesita un backend (Firebase, Supabase, o un servidor propio).
+
+  CaracterÃ­sticas implementadas en la maqueta:
+  - Listado de cursos y temas (datos de ejemplo).
+  - PÃ¡gina de curso/modal con lista de temas.
+  - Sistema simple de preguntas y respuestas (almacenado en localStorage: funciona en el mismo equipo).
+  - Formulario para "subir" una explicaciÃ³n en texto o insertar un video de YouTube.
+  - Estilo responsive con apariencia escolar (colores suaves) y layout tipo foro.
+-->
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MINDNGS · Ayuda entre compañeros</title>
+  <meta name="description" content="Plataforma colaborativa estudiantil: preguntas, respuestas y videos explicativos para cursos escolares." />
+  <style>
+    :root{--accent:#2b6cb0;--accent-2:#90cdf4;--bg:#f7fbff;--card:#ffffff;--muted:#6b7280}
+    *{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    body{margin:0;background:linear-gradient(180deg,var(--bg),#fff);color:#0f172a}
+    header{background:var(--accent);color:#fff;padding:18px 20px;display:flex;align-items:center;justify-content:space-between}
+    header h1{font-size:20px;margin:0}
+    .container{max-width:1100px;margin:22px auto;padding:0 16px}
+    .hero{display:flex;gap:20px;align-items:center}
+    .hero-card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(11,26,50,0.06);flex:1}
+    .cta{background:#fff;color:var(--accent);padding:8px 12px;border-radius:8px;border:2px solid rgba(255,255,255,0.12);cursor:pointer}
+    .courses{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:18px}
+    .course{background:linear-gradient(180deg,var(--card),#fbfdff);padding:14px;border-radius:10px;border:1px solid #e6eef9;cursor:pointer}
+    .course h3{margin:0 0 6px 0;font-size:16px}
+    .muted{color:var(--muted);font-size:13px}
+    .two-cols{display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-top:18px}
+    .card{background:var(--card);padding:14px;border-radius:10px;border:1px solid #eef6ff}
+    .qa-list{list-style:none;padding:0;margin:0}
+    .qa-item{padding:12px;border-radius:8px;border:1px solid #f0f6ff;margin-bottom:10px}
+    label{display:block;font-weight:600;margin-bottom:6px}
+    input,textarea,select{width:100%;padding:8px;border-radius:8px;border:1px solid #dbeafe}
+    button{background:var(--accent);color:#fff;padding:8px 10px;border-radius:8px;border:0;cursor:pointer}
+    footer{margin:30px 0;padding:14px;text-align:center;color:var(--muted)}
+    @media(max-width:900px){.two-cols{grid-template-columns:1fr}}
+    .topic-list{display:flex;flex-direction:column;gap:8px}
+    .topic{padding:8px;border-radius:8px;border:1px dashed #e6f0ff;background:#fbfdff}
+    .small{font-size:13px}
+    .video-embed{margin-top:8px;border-radius:8px;overflow:hidden}
+  </style>
+</head>
+<body>
+  <header>
+    <div style="display:flex;gap:12px;align-items:center">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="24" height="24" rx="6" fill="white"/>
+        <path d="M7 8h10M7 12h6" stroke="#2b6cb0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h1>MINDNGS</h1>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <span class="small">Ayuda entre compañeros</span>
+      <button class="cta" id="btn-new-question">+ Preguntar</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div class="hero-card">
+        <h2>Bienvenido — Aprendamos entre compañeros</h2>
+        <p class="muted">Plataforma colaborativa para que estudiantes suban explicaciones, videos y resuelvan dudas entre sí. Tipo Brainly pero con identidad jesusina.</p>
+        <div style="margin-top:10px;display:flex;gap:10px">
+          <button id="explore-courses">Explorar cursos</button>
+          <button class="cta" id="how-to">Cómo funciona</button>
+        </div>
+      </div>
+      <div style="width:300px">
+        <div class="card">
+          <h3>¿Qué ofrece MINDNGS?</h3>
+          <p class="muted small">Explicaciones creadas por estudiantes, videos incrustados, preguntas y respuestas, y un ambiente de apoyo entre pares.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 style="margin-top:18px">Cursos</h2>
+      <div class="courses" id="courses"></div>
+    </section>
+
+    <div class="two-cols">
+      <div>
+        <div class="card">
+          <h3>Preguntas recientes</h3>
+          <ul id="qa" class="qa-list"></ul>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h3>Publicar explicación / video</h3>
+          <form id="explain-form">
+            <label for="course-select">Curso</label>
+            <select id="course-select"></select>
+            <label for="topic-select">Tema</label>
+            <select id="topic-select"></select>
+            <label for="expl-text">Explicación (texto)</label>
+            <textarea id="expl-text" rows="4" placeholder="Escribe tu explicación... (ayuda a tus compañeros)"></textarea>
+            <label for="video-url">Video (enlace YouTube, opcional)</label>
+            <input id="video-url" placeholder="https://www.youtube.com/watch?v=..." />
+            <div style="margin-top:8px;display:flex;gap:8px">
+              <button type="submit">Publicar explicación</button>
+              <button type="button" id="clear-storage">Borrar demo (local)</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <aside>
+        <div class="card">
+          <h3>Cómo usar (rápido)</h3>
+          <ol class="small">
+            <li>Explora un curso y tema.</li>
+            <li>Si tienes dudas, publícalas con +Preguntar.</li>
+            <li>Si sabes explicar, añade texto o pega un enlace de YouTube.</li>
+            <li>Respeta normas y pide permiso para videos con menores.</li>
+          </ol>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h3>Consejos para el concurso</h3>
+          <p class="muted small">Muestra métricas: #preguntas respondidas, ejemplos de explicaciones, testimonios de alumnos y un demo en vivo.</p>
+        </div>
+      </aside>
+    </div>
+
+    <footer>
+      <small>Proyecto prototipo · MINDNGS — Plataforma de apoyo entre estudiantes</small>
+    </footer>
+  </main>
+
+  <!-- Welcome Modal -->
+  <div id="welcome-modal" style="display:none;position:fixed;inset:0;background:rgba(2,6,23,0.55);display:flex;align-items:center;justify-content:center;padding:20px;z-index:1200">
+    <div style="background:linear-gradient(180deg,#ffffff,#f8fbff);padding:26px;border-radius:12px;max-width:720px;width:100%;box-shadow:0 20px 50px rgba(11,26,50,0.25);text-align:center">
+      <h2 style="margin:0 0 8px;font-size:26px;color:var(--accent)">¡Hola estudiante! 👋</h2>
+      <p style="color:#0b1220;margin:8px 0 16px">Bienvenido a <strong>MINDNGS</strong>, un espacio creado por y para alumnos. Aquí podrás aprender, compartir tus conocimientos y resolver tus dudas junto a tus compañeros.</p>
+      <div style="font-size:13px;color:var(--muted);margin-top:6px">¿Quieres que te mostremos esto solo la primera vez? Puedes activar "No mostrar de nuevo".</div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:12px">
+        <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="dont-show"/> No mostrar de nuevo</label>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:12px">
+        <button id="start-btn" style="background:var(--accent);color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer">¡Empezar!</button>
+        <button id="learn-more" style="background:transparent;color:var(--accent);border:2px solid var(--accent);padding:8px 12px;border-radius:8px;cursor:pointer">Ver cómo funciona</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals / Templates -->
+  <div id="modal" style="display:none;position:fixed;inset:0;background:rgba(2,6,23,0.45);align-items:center;justify-content:center;padding:20px">
+    <div id="modal-card" style="background:#fff;padding:18px;border-radius:10px;max-width:780px;width:100%;max-height:90vh;overflow:auto"></div>
+  </div>
+
+  <script>
+    // Datos de ejemplo (se pueden editar)
+    const DATA = {
+      courses: [
+        {id:'mat', title:'Matemáticas', topics:['Álgebra','Geometría','Probabilidades']},
+        {id:'fis', title:'Física', topics:['Cinemática','Dinámica','Termodinámica']},
+        {id:'bio', title:'Biología', topics:['Células','Ecosistemas','Genética']},
+        {id:'hist', title:'Historia', topics:['Perú republicano','Edad Media','Historia universal']}
+      ],
+      qa: []
+    }
+
+    // Inicializar UI
+    const coursesEl = document.getElementById('courses')
+    const courseSelect = document.getElementById('course-select')
+    const topicSelect = document.getElementById('topic-select')
+    const qaList = document.getElementById('qa')
+
+    function renderCourses(){
+      coursesEl.innerHTML = ''
+      courseSelect.innerHTML = ''
+      DATA.courses.forEach(c => {
+        const div = document.createElement('div')
+        div.className = 'course'
+        div.innerHTML = `<h3>${c.title}</h3><p class="muted">${c.topics.length} temas</p>`
+        div.onclick = ()=>openCourse(c)
+        coursesEl.appendChild(div)
+
+        const opt = document.createElement('option')
+        opt.value = c.id
+        opt.textContent = c.title
+        courseSelect.appendChild(opt)
+      })
+      onCourseChange()
+    }
+
+    function onCourseChange(){
+      const courseId = courseSelect.value || DATA.courses[0].id
+      const course = DATA.courses.find(c=>c.id===courseId)
+      topicSelect.innerHTML = ''
+      course.topics.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;topicSelect.appendChild(o)})
+    }
+
+    courseSelect.addEventListener('change', onCourseChange)
+
+    function openCourse(course){
+      const modal = document.getElementById('modal')
+      const card = document.getElementById('modal-card')
+      card.innerHTML = `<h2>${course.title}</h2><p class='muted'>Temas disponibles:</p><div class='topic-list'>${course.topics.map(t=>`<div class='topic'><strong>${t}</strong><div class='small'>Explicaciones compartidas</div><div id='topics-${course.id}-${t.replace(/\s/g,'_')}'></div></div>`).join('')}</div><div style='margin-top:12px'><button onclick="closeModal()">Cerrar</button></div>`
+      modal.style.display='flex'
+      // render explanations for each topic from storage
+      renderExplanations()
+    }
+
+    function closeModal(){document.getElementById('modal').style.display='none'}
+
+    // Q&A simple (localStorage)
+    function loadState(){
+      try{
+        const s = JSON.parse(localStorage.getItem('school_demo_v1'))
+        if(s){DATA.qa = s.qa||[]}
+      }catch(e){console.warn(e)}
+    }
+    function saveState(){localStorage.setItem('school_demo_v1',JSON.stringify({qa:DATA.qa}))}
+
+    function renderQA(){
+      qaList.innerHTML = ''
+      if(DATA.qa.length===0){qaList.innerHTML=`<li class='muted small'>No hay preguntas (aún). Usa +Preguntar para crear una.</li>`;return}
+      DATA.qa.slice().reverse().forEach(q=>{
+        const li=document.createElement('li');li.className='qa-item'
+        li.innerHTML = `<strong>${q.title}</strong><div class='small muted'>${q.course} · ${q.topic} — ${new Date(q.ts).toLocaleString()}</div><p>${q.content||''}</p><div><em>Respuestas: ${q.answers.length}</em></div><div style='margin-top:8px'><button onclick='openQuestion("${q.id}")'>Ver / Responder</button></div>`
+        qaList.appendChild(li)
+      })
+    }
+
+    function uid(prefix='id'){return prefix+Math.random().toString(36).slice(2,9)}
+
+    function openQuestion(id){
+      const q = DATA.qa.find(x=>x.id===id)
+      const modal = document.getElementById('modal')
+      const card = document.getElementById('modal-card')
+      card.innerHTML = `<h3>${q.title}</h3><div class='small muted'>${q.course} · ${q.topic}</div><p>${q.content||''}</p><h4>Respuestas</h4><div id='answers-list'></div><form id='answer-form'><label>Tu respuesta</label><textarea id='ans-text' rows='3'></textarea><button type='submit'>Enviar respuesta</button></form><div style='margin-top:8px'><button onclick='closeModal()'>Cerrar</button></div>`
+      modal.style.display='flex'
+      renderAnswers(q)
+      document.getElementById('answer-form').addEventListener('submit', function(e){e.preventDefault();const a=document.getElementById('ans-text').value.trim();if(!a)return alert('Escribe una respuesta');q.answers.push({id:uid('a'),text:a,ts:Date.now()});saveState();renderAnswers(q);renderQA()})
+    }
+
+    function renderAnswers(q){
+      const el=document.getElementById('answers-list')
+      el.innerHTML=''
+      if(q.answers.length===0){el.innerHTML='<div class="muted small">Aún no hay respuestas.</div>'}
+      q.answers.forEach(a=>{const d=document.createElement('div');d.style.marginBottom='8px';d.innerHTML=`<div class='small muted'>${new Date(a.ts).toLocaleString()}</div><div>${a.text}</div>`;el.appendChild(d)})
+    }
+
+    // Form para publicar explicaciones
+    document.getElementById('explain-form').addEventListener('submit', function(e){e.preventDefault();const courseId=courseSelect.value;const course=DATA.courses.find(c=>c.id===courseId);const topic=topicSelect.value;const text=document.getElementById('expl-text').value.trim();const video=document.getElementById('video-url').value.trim();const expl={id:uid('exp'),course:course.title,topic,text,video,ts:Date.now()};
+      // Guardar en localStorage simple: usaremos un key con explicaciones por topic
+      const key = `exps_${courseId}_${topic.replace(/\s/g,'_')}`
+      const list = JSON.parse(localStorage.getItem(key)||'[]')
+      list.push(expl)
+      localStorage.setItem(key,JSON.stringify(list))
+      document.getElementById('expl-text').value=''
+      document.getElementById('video-url').value=''
+      alert('Explicación publicada (demo local).')
+      renderExplanations()
+    })
+
+    function renderExplanations(){
+      DATA.courses.forEach(c=>{
+        c.topics.forEach(t=>{
+          const key = `exps_${c.id}_${t.replace(/\s/g,'_')}`
+          const container = document.getElementById(`topics-${c.id}-${t.replace(/\s/g,'_')}`)
+          if(!container) return
+          const list = JSON.parse(localStorage.getItem(key)||'[]')
+          container.innerHTML = ''
+          if(list.length===0) {container.innerHTML='<div class="small muted">Sin explicaciones aún.</div>';return}
+          list.slice().reverse().forEach(exp=>{
+            const wrap = document.createElement('div')
+            wrap.style.marginTop='8px'
+            wrap.innerHTML = `<div style='font-weight:600'>${new Date(exp.ts).toLocaleString()}</div><div class='small'>${exp.text||''}</div>`
+            if(exp.video) {
+              const id = (exp.video.match(/[?&]v=([^&]+)/)||[])[1] || exp.video
+              const iframe = document.createElement('div')
+              iframe.className='video-embed'
+              iframe.innerHTML = `<iframe width='100%' height='220' src='https://www.youtube.com/embed/${id}' frameborder='0' allow='accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture' allowfullscreen></iframe>`
+              wrap.appendChild(iframe)
+            }
+            container.appendChild(wrap)
+          })
+        })
+      })
+    }
+
+    // Nuevo modal para crear pregunta
+    document.getElementById('btn-new-question').addEventListener('click', ()=>{
+      const modal=document.getElementById('modal'),card=document.getElementById('modal-card')
+      card.innerHTML = `<h3>Publicar pregunta</h3><form id='qform'><label>Título</label><input id='q-title' required /><label>Curso</label><select id='q-course'>${DATA.courses.map(c=>`<option value='${c.id}'>${c.title}</option>`).join('')}</select><label>Tema</label><select id='q-topic'></select><label>Detalle</label><textarea id='q-content' rows='4'></textarea><div style='margin-top:8px'><button type='submit'>Publicar</button> <button type='button' onclick='closeModal()'>Cancelar</button></div></form>`
+      modal.style.display='flex'
+      document.getElementById('q-course').addEventListener('change', function(){const val=this.value;const c=DATA.courses.find(x=>x.id===val);const tsel=document.getElementById('q-topic');tsel.innerHTML='';c.topics.forEach(tt=>{const o=document.createElement('option');o.value=tt;o.textContent=tt;tsel.appendChild(o)})
+      })
+      document.getElementById('q-course').dispatchEvent(new Event('change'))
+      document.getElementById('qform').addEventListener('submit', function(e){e.preventDefault();const t=document.getElementById('q-title').value.trim();const c=document.getElementById('q-course').value;const cobj=DATA.courses.find(x=>x.id===c);const topic=document.getElementById('q-topic').value;const content=document.getElementById('q-content').value.trim();const q={id:uid('q'),title:t,course:cobj.title,topic,content,answers:[],ts:Date.now()};DATA.qa.push(q);saveState();renderQA();closeModal()})
+    })
+
+    document.getElementById('explore-courses').addEventListener('click', ()=>{window.scrollTo({top:220,behavior:'smooth'})})
+    document.getElementById('how-to').addEventListener('click', ()=>{alert('Prototipo: en la versión final agrega registro de usuarios, roles (estudiante, moderador) y consentimiento para videos con menores.')})
+    document.getElementById('clear-storage').addEventListener('click', ()=>{if(confirm('Borrar datos locales de demo?')){localStorage.clear();location.reload()}})
+
+    // Welcome modal logic
+    (function(){
+      const welcomeModal = document.getElementById('welcome-modal')
+      const startBtn = document.getElementById('start-btn')
+      const learnMore = document.getElementById('learn-more')
+      const dontShow = document.getElementById('dont-show')
+      function showWelcome(){
+        const hidden = localStorage.getItem('mindngs_hide_welcome')
+        if(hidden==='1') return
+        if(welcomeModal) welcomeModal.style.display='flex'
+      }
+      if(startBtn){
+        startBtn.addEventListener('click', ()=>{ if(dontShow && dontShow.checked) localStorage.setItem('mindngs_hide_welcome','1'); if(welcomeModal) welcomeModal.style.display='none' })
+      }
+      if(learnMore){
+        learnMore.addEventListener('click', ()=>{ alert('En MINDNGS puedes explorar cursos, preguntar sobre temas y subir explicaciones en texto o videos (enlace de YouTube).') })
+      }
+      setTimeout(showWelcome,300)
+    })();
+
+    // Load
+    loadState();renderCourses();renderQA();renderExplanations();
+  </script>
+</body>
+</html>
